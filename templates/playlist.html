@@ -1,0 +1,65 @@
+{% include "header.html" %}
+<div class="container py-5 px-5">
+  <div class="row">
+    <div class="col-md-6 p-0">
+          <video id="my-video" class="w-100" controls>
+            <source src="/{{ path }}" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+          <h2 class="py-2">{{video_title}}</h2>
+          <p>{{ video_description }}</p>
+          <hr>
+          <form method="post" action="/comments/">
+            <input type="hidden" name="path" value="{{ path }}">
+            <input type="hidden" name="course" value="{{video_course}}">
+            <input type="hidden" name="email" value="{{email}}">
+            <div class="form-group">
+              <label for="comment">Leave a comment:</label>
+              <textarea class="form-control" name="comment" id="comment" rows="3"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+          </form>
+          <hr>
+
+<!-- Display the existing comments for the video -->
+                <div class="text-dark">
+                    <h4 class="mb-0">Recent comments</h4>
+                    <p class="fw-light mb-4 pb-2">Latest Comments section by users</p>
+                    {% for file_path, comment, name in comments %}
+                    <div class="d-flex flex-start">
+                      <img class="rounded-circle shadow-1-strong me-3"
+                        src="https://mdbcdn.b-cdn.net/img/Photos/Avatars/img%20(23).webp" alt="avatar" width="60"
+                        height="60" style="margin-right: 20px; "/>
+                      <div>
+                        <h6 class="fw-bold mb-1">{{ name }}</h6>
+                        <div class="d-flex align-items-center mb-3">
+                          <a href="#!" class="link-muted"><i class="fas fa-pencil-alt ms-2"></i></a>
+                          <a href="#!" class="link-muted"><i class="fas fa-redo-alt ms-2"></i></a>
+                          <a href="#!" class="link-muted"><i class="fas fa-heart ms-2"></i></a>
+                        </div>
+                        <p class="mb-0">
+                          {{ comment }}
+                        </p>
+                      </div>
+                    </div>
+                    <hr>
+                    {% endfor %}
+                </div>          
+
+      </div>
+    <div class="col-md-6 d-flex">
+              <ul class="list-unstyled px-5">
+          {% for video in videos %}
+          <li class="media pb-3">
+            <img src="/{{ video[4] }}" class="mr-3 img-fluid" alt="Video thumbnail" height="100px" width="100px">
+            <div class="media-body px-2">
+              <a href="/{{ video[2] }}/course-videos/{{ video[3] }}" ><h5 class="mt-0 mb-1">{{ video[0] }}</h5></a>
+            </div>
+          </li>
+          {% endfor %}
+          <!-- Add more list items -->
+        </ul>
+    </div>
+  </div>
+</div>
+{% include "footer.html" %}

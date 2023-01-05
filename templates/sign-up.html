@@ -1,0 +1,53 @@
+{% include "header.html" %}
+<div class="mx-auto w-50 py-5 px-5">
+    <h1 class="text-center mb-5">Sign Up</h1>
+    <form action="/signup" method="post">
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" class="form-control" id="name" name="name" required>
+      </div>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" class="form-control" id="email" name="email" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" class="form-control" id="password" name="password" required>
+      </div>
+      <div class="form-group">
+        <label for="role">Role</label>
+        <select class="form-control" id="role" name="role">
+          <option value="teacher">Teacher</option>
+          <option value="student">Student</option>
+        </select>
+      </div>
+      <div class="form-group" id="course">
+        <label for="course">Course</label>
+        <select name="course" class="form-control">
+          <option value="dcn">Data Communication And Networking</option>
+          <option value="mp">Microprocessors</option>
+          <option value="ca">Computer Architecture</option>
+          <option value="se">Software Engineering</option>
+          <option value="bnf">Banking And Financing</option>
+          <option value="java">Java Programming</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" style="background-color: #6927ff;">Sign Up</button>
+    </form>
+    <p class="py-5">Alredy signed up? <a href="/login"> Click here to log in</a></p>
+</div>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+  const roleSelect = document.getElementById("role");
+  const courseSelect = document.getElementById("course");
+
+  roleSelect.addEventListener("change", () => {
+    if (roleSelect.value === "teacher") {
+      courseSelect.style.display = "block";
+    } else {
+      courseSelect.style.display = "none";
+    }
+  });
+});
+</script>
+{% include "footer.html" %}

@@ -1,0 +1,32 @@
+{% include "header.html" %}
+<div class="p-5 text-center bg-image rounded-3 hero-section">
+    <div class="d-flex justify-content-center align-items-center h-100">
+      <div class="text-white over-the-top">
+        <h1 class="mb-3">Welcome to Surana College's Learning Management System!</h1>
+        <h4 class="mb-3">Here, you can access a wide variety of high-quality video lectures from some of the top educators in the field.</h4>
+        {% if isLogin %}
+        <a class="btn btn-outline-light btn-lg" href="/all-courses" role="button">Check Courses</a>
+        {% else %}
+        <a class="btn btn-outline-light btn-lg" href="/signup" role="button">Sign Up Now</a>
+        {% endif %}
+      </div>
+      <div class="black-mask"></div>
+    </div>
+</div>
+{% include "course-cards.html" %}
+<div class="container">
+    <div class="row py-5 px-5">
+        <div class="col-12 col-md-6 d-flex align-items-center justify-content-center">
+            <div>
+              <h2 class="display-4">Why Surana College LMS?</h2>
+              <p class="lead">Our LMS makes it easy for you to stay organized and on top of your studies, no matter where you are. With 24/7 access to your coursework, you can learn at your own pace and on your own schedule.
+              <p class="lead">So why wait? Start exploring all that our LMS has to offer and take control of your education today!
+            </div>
+        </div>          
+      <div class="col-12 col-md-6 d-flex align-items-center justify-content-center">
+        <img src="/static/img/student-g6b40d8753_1280.png" alt="High resolution image" height="350px" width="250px" class="img-fluid">
+      </div>
+    </div>
+</div>
+
+{% include "footer.html" %}

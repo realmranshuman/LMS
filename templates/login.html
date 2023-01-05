@@ -1,0 +1,19 @@
+{% include "header.html" %}
+<div class="mx-auto w-50 py-5 px-5">
+    <h1 class="text-center mb-5">Log In</h1>
+    <form action="/login" method="post">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" class="form-control" id="email" name="email" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" class="form-control" id="password" name="password" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" style="background-color: #6927ff;">Sign In</button>
+    </form>
+    <h5 class="text-center text-danger py-5"> {{msg}} </h5>
+    <p class="py-5">Don't have an account? <a href="/signup/"> Click Here Sign Up</a></p>
+</div>
+  
+{% include "footer.html" %}

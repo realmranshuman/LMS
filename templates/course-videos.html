@@ -1,0 +1,31 @@
+{% include "header.html" %}
+<div class="container py-5 px-5">
+  <div class="row">
+    <div class="col-md-6 p-0">
+      {% for video in videos %}
+        {% if loop.index == 1 %}
+          <video id="my-video" class="w-100" controls>
+            <source src="/{{ video[3] }}" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+          <h2 class="py-3 ">{{ video[0] }}</h2>
+          <p>{{ video[1] }}</p>
+        {% endif %}
+      {% endfor %}
+    </div>
+    <div class="col-md-6 d-flex">
+              <ul class="list-unstyled px-5">
+          {% for video in videos %}
+          <li class="media pb-3">
+            <img src="/{{ video[4] }}" class="mr-3 img-fluid" alt="Video thumbnail" height="100px" width="100px">
+            <div class="media-body px-2">
+              <a href="/{{ video[2] }}/course-videos/{{ video[3] }}" ><h5 class="mt-0 mb-1">{{ video[0] }}</h5></a>
+            </div>
+          </li>
+          {% endfor %}
+          <!-- Add more list items -->
+        </ul>
+    </div>
+  </div>
+</div>
+{% include "footer.html" %}

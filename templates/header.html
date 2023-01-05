@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/static/css/custom.css">
+  <title>Surana College LMS</title>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark ftco_navbar bg-light ftco-navbar-light" id="ftco-navbar">
+    <div class="container">
+      <a href="/" class="navbar-brand"><img src="/static/img/Suranacollege-logo-2.jpg" height="50"></a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#ftco-nav" aria-controls="ftco-nav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="oi oi-menu">
+          <svg width="50" height="50">
+            <rect x="10" y="5" rx="5" ry="5" width="35" height="7" fill="#421b9b" />
+            <rect x="10" y="15" rx="5" ry="5" width="35" height="7" fill="#421b9b" />
+            <rect x="10" y="25" rx="5" ry="5" width="35" height="7" fill="#421b9b" />
+          </svg>          
+        </span> 
+      </button>
+      <div class="collapse navbar-collapse" id="ftco-nav">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item active"><a href="/" class="nav-link">Home</a></li>
+          <li class="nav-item"><a href="/about/" class="nav-link">About</a></li>
+          <li class="nav-item"><a href="/courses/" class="nav-link">Courses</a></li>
+          <li class="nav-item"><a href="/contact/" class="nav-link">Contact</a></li>
+          {% if isLogin %}
+            {% if role == "teacher" %}
+              <li class="nav-item cta"><a href="/teacher-dashboard/" class="nav-link"><span>Teacher's Dashboard</span></a></li>
+            {% else %}
+              <li class="nav-item cta"><a href="/my-account/" class="nav-link"><span>My Account</span></a></li>
+            {% endif %}
+          {% else %}
+          <li class="nav-item cta"><a href="/signup/" class="nav-link"><span>Sign Up</span></a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>

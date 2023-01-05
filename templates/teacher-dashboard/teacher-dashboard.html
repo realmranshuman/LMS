@@ -1,0 +1,21 @@
+{% include "header.html" %}
+
+{% include "/teacher-dashboard/left-sidebar.html" %}
+
+<div class="col-md-9">
+    {% if template_path == "/teacher-dashboard/contact-queries.html" %}
+    <div id="contact-queries" class="p-3">
+      {% include template_path %}
+    </div>
+    {% elif template_path == "/teacher-dashboard/student-list.html" %}
+    <div id="student-list" class="p-3">
+      {% include template_path %}
+    </div>
+    {% else %}
+        {% include "/teacher-dashboard/dashboard-welcome.html" %}
+    {% endif %}
+</div>
+<!-- carried from left-sidebar -->
+    </div>
+</div>
+{% include "footer.html" %}

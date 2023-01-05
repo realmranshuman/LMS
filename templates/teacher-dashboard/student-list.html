@@ -1,0 +1,19 @@
+<table class="table">
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">Name</th>
+        <th scope="col">Email</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for student in students %}
+      <tr>
+        <th scope="row">{{ loop.index }}</th>
+        <td>{{ student[3] }}</td>
+        <td>{{ student[0] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+</table>
+  
