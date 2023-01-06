@@ -211,8 +211,6 @@ async def teacherDashboard(request: Request, id:str):
         template_path = "/teacher-dashboard/contact-queries.html"
     elif id == "students-list":
         template_path = "/teacher-dashboard/students-list.html"
-    elif id == "student-list":
-        template_path = "/teacher-dashboard/videos-list.html"
     elif id == "videos-list":
         template_path = "/teacher-dashboard/videos-list.html"
     
