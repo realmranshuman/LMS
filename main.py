@@ -10,6 +10,7 @@ from typing import Optional
 import moviepy.editor as mpy
 import sqlite3
 import os
+import subprocess
 import hashlib
 
 # Creating FastAPI Objects
@@ -269,7 +270,7 @@ async def uploadVideoPost (request: Request, title: str = Form(...), description
     thumbnail_filename = os.path.splitext(file.filename)[0] + '.jpg'
     thumbnail_path = os.path.join(thumbnail_folder, thumbnail_filename)
     thumbnail = video.save_frame(thumbnail_path, t='00:00:01')
-
+    video.close()
     # Execute an INSERT statement to add the file path to the database
     # Open a connection to the database
     conn = sqlite3.connect(db)
@@ -283,6 +284,41 @@ async def uploadVideoPost (request: Request, title: str = Form(...), description
     conn.close()
     # return {"filename": file.filename, "file_path": file_path}
     return RedirectResponse(f"/{course}/course-videos/", status_code=status.HTTP_302_FOUND)
+
+# Delete uploaded videos by the teacher
+
+@app.post("/delete-video/{title}/{course}")
+async def delete_video(request: Request, title: str, course: str):
+    if request.method == "POST":
+        # Connect to the database
+        conn = sqlite3.connect(db)
+        cursor = conn.cursor()
+
+        # Select the video file path and thumbnail path from the database
+        cursor.execute("SELECT file_path, thumbnail_path FROM videos WHERE title = ? AND course = ?", (title, course))
+        file_path, thumbnail_path = cursor.fetchone()
+
+        # Delete the video file and thumbnail from the server
+        os.remove(file_path)
+        os.remove(thumbnail_path)
+
+        # Delete the video from the videos table
+        cursor.execute("DELETE FROM videos WHERE title = ? AND course = ?", (title, course))
+
+        # Commit the transaction
+        conn.commit()
+
+        # Close the connection
+        conn.close()
+
+        # Redirect back to the teacher dashboard page
+        return RedirectResponse("/teacher-dashboard/videos-list", status_code=status.HTTP_302_FOUND)
+
+
+
+
+
+
 
 # All courses list
 @app.get("/all-courses/", response_class=HTMLResponse)
