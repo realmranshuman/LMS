@@ -120,8 +120,6 @@ async def login(request: Request):
     role= request.session.get('role')
     return templates.TemplateResponse("login.html", {"request": request, "isLogin": isLogin, "role": role})
 
-import hashlib
-
 @app.post("/login/", response_class=HTMLResponse)
 def loginPost(request: Request, response: Response, email: str = Form(...), password: str = Form(...)):
     # Connect to the database
@@ -189,37 +187,38 @@ async def teacherDashboard(request: Request):
 
 @app.get("/teacher-dashboard/{id}", response_class=HTMLResponse)
 async def teacherDashboard(request: Request, id:str):
-    # Accessing Contact Queries
+    email = request.session.get('email')
+    isLogin = request.session.get('isLogin')
+    role= request.session.get('role')
     # Connecting to the database
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
+    # Accessing Contact Queries
     cursor.execute('SELECT * FROM contact_queries')
     queries = cursor.fetchall()
-    # Commit the transaction
-    conn.commit()
-    # Close the connection
-    conn.close()
-
     # Accessing Student List
-    conn = sqlite3.connect(db)
-    cursor = conn.cursor()
     cursor.execute('SELECT * FROM users WHERE role="student"')
     students = cursor.fetchall()
+    # Selecting the videos uploaded by the teacher who is accessing the dashboard
+    cursor.execute('SELECT * FROM videos WHERE course IN (SELECT course FROM teacher_courses WHERE email = ?)', (email,))
+    videos = cursor.fetchall()
     # Commit the transaction
     conn.commit()
     # Close the connection
     conn.close()
-    isLogin = request.session.get('isLogin')
-    role= request.session.get('role')
     template_path = ""
     if id == "contact-queries":
         template_path = "/teacher-dashboard/contact-queries.html"
+    elif id == "students-list":
+        template_path = "/teacher-dashboard/students-list.html"
     elif id == "student-list":
-        template_path = "/teacher-dashboard/student-list.html"
+        template_path = "/teacher-dashboard/videos-list.html"
+    elif id == "videos-list":
+        template_path = "/teacher-dashboard/videos-list.html"
     
     # Access To The Teacher's Dashboard
     if role == "teacher":
-        return templates.TemplateResponse("/teacher-dashboard/teacher-dashboard.html", {"request": request, "isLogin": isLogin, "role": role, "queries": queries, "students": students, "template_path": template_path })
+        return templates.TemplateResponse("/teacher-dashboard/teacher-dashboard.html", {"request": request, "isLogin": isLogin, "role": role, "queries": queries, "videos": videos, "students": students, "template_path": template_path })
     else:
         return HTMLResponse(unauthorizedAccess)
 
