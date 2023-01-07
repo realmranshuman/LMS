@@ -1,0 +1,15 @@
+{% include "header.html" %}
+<h1 class="py-2 text-center">Create A Topic</h1>
+<form action="/topics/create" method="post" class="mx-auto py-5 w-50">
+    <div class="form-group">
+      <label for="title">Title Of The Topic:</label>
+      <input type="text" class="form-control" id="title" name="title">
+    </div>
+    <div class="form-group">
+      <label for="description">Description</label>
+      <textarea class="form-control" id="description" name="description"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block">Post The Topic</button>
+</form>
+
+{% include "footer.html" %} 

@@ -420,3 +420,92 @@ async def contactUsPost(request: Request, name: str = Form(...), email: str = Fo
     
     # Redirect back to the /contact/ page with a success message
     return RedirectResponse("/contact/", status_code=status.HTTP_302_FOUND, headers={"msg": "Form submitted successfully"})
+
+# Discussion Forum
+# Create/Post topics
+@app.get("/create-topic/", response_class=HTMLResponse)
+async def createTopic(request: Request):
+    isLogin = request.session.get('isLogin')
+    role= request.session.get('role')
+    return templates.TemplateResponse("/discussion-forum/create-topic.html", {"request": request, "isLogin": isLogin, "role": role})
+
+@app.post("/topics/create")
+def createTopicPost(request: Request, title: str = Form(...), description: str = Form(...)):
+    conn = sqlite3.connect(db)
+    cursor = conn.cursor()
+
+    # Get the email of the user who created the topic from the session
+    created_by = request.session.get("email")
+
+    # Get the name of the user who created the topic
+    cursor.execute("SELECT name FROM users WHERE email = ?", (created_by,))
+    created_by_name = cursor.fetchone()[0]
+
+    cursor.execute(
+        """
+        INSERT INTO topics (title, description, created_by, created_by_name)
+        VALUES (?, ?, ?, ?)
+        """,
+        (title, description, created_by, created_by_name),
+    )
+
+    conn.commit()
+
+    # return {
+    #     "id": cursor.lastrowid,
+    #     "title": title,
+    #     "description": description,
+    #     "created_by": created_by,
+    #     "created_by_name": created_by_name,
+    # }
+
+# List all the existing topics
+@app.get("/topics/")
+def list_topics(request: Request):
+    conn = sqlite3.connect(db)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT topics.*, users.name AS created_by_name
+        FROM topics
+        JOIN users ON topics.created_by = users.email
+        """
+    )
+    topics = cursor.fetchall()
+
+    isLogin = request.session.get('isLogin')
+    role= request.session.get('role')
+    return templates.TemplateResponse("/discussion-forum/list-topics.html", {"request": request, "isLogin": isLogin, "role": role, "topics": topics })
+
+# Topic and all the replies to it
+@app.get("/topics/{topic_id}")
+def view_topic(request: Request, topic_id: int):
+    conn = sqlite3.connect(db)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT topics.*, users.name AS created_by_name
+        FROM topics
+        JOIN users ON topics.created_by = users.email
+        WHERE topics.id = ?
+        """,
+        (topic_id,),
+    )
+    topic = cursor.fetchone()
+
+    cursor.execute(
+        """
+        SELECT replies.*, users.name AS created_by_name
+        FROM replies
+        JOIN users ON replies.created_by = users.email
+        WHERE replies.topic_id = ?
+        """,
+        (topic_id,),
+    )
+    replies = cursor.fetchall()
+
+    isLogin = request.session.get('isLogin')
+    role= request.session.get('role')
+    return templates.TemplateResponse("/discussion-forum/topic.html", {"request": request, "isLogin": isLogin, "role": role, "topic": topic, "replies": replies})
