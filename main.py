@@ -478,7 +478,7 @@ def list_topics(request: Request):
     role= request.session.get('role')
     return templates.TemplateResponse("/discussion-forum/list-topics.html", {"request": request, "isLogin": isLogin, "role": role, "topics": topics })
 
-# Topic and all the replies to it
+# Opens topic and lists all the replies to it
 @app.get("/topics/{topic_id}")
 def view_topic(request: Request, topic_id: int):
     conn = sqlite3.connect(db)
@@ -509,3 +509,35 @@ def view_topic(request: Request, topic_id: int):
     isLogin = request.session.get('isLogin')
     role= request.session.get('role')
     return templates.TemplateResponse("/discussion-forum/topic.html", {"request": request, "isLogin": isLogin, "role": role, "topic": topic, "replies": replies})
+
+# Reply to the topics
+
+@app.post("/replies/create")
+def create_reply(request:Request, topic_id: int =Form(...) , reply: str =Form(...)):
+    email = request.session.get("email")
+    if not email:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    conn = sqlite3.connect(db)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT name FROM users WHERE email = ?
+        """,
+        (email,),
+    )
+
+    name = cursor.fetchone()[0]
+
+    cursor.execute(
+        """
+        INSERT INTO replies (topic_id, reply, created_at, created_by, created_by_name)
+        VALUES (?, ?, datetime('now'), ?, ?)
+        """,
+        (topic_id, reply, email, name),
+    )
+
+    conn.commit()
+
+    return {"message": "Reply created successfully"}
