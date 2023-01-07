@@ -1,0 +1,63 @@
+{% include "header.html" %}
+ 
+<div class="container py-5 px-5">
+        <h1 class="d-flex justify-content-center align-items-center">Discussion Topics</h1>
+    <div class="py-3">
+        <button class="btn btn-block btn-primary">Post a new topic</button>
+    </div>
+    {% for topic in topics %}
+    <div class="mb-2">
+        <div class="p-2 p-sm-3">
+            <div class="media forum-item">
+                <a href="#" data-toggle="collapse" data-target=".forum-content"><img src="https://bootdey.com/img/Content/avatar/avatar1.png" class="mr-3 rounded-circle" width="50" alt="User" /></a>
+                <div class="media-body">
+                    <h6><a href="/topics/{{ topic[0] }}"class="text-body">{{ topic[1] }}</a></h6>
+                    <p class="text-secondary">
+                        {{ topic[2] | truncate(200, true)}}
+                    </p>
+                    <p class="text-muted"><a href="javascript:void(0)">{{ topic[5] }}</a> posted this <span class="original-time" style="display:none;">{{ topic[3] }}</span><span class="text-secondary time-ago font-weight-bold">{{ topic[3] }}</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    <ul class="pagination pagination-sm pagination-circle justify-content-center mb-0">
+        <li class="page-item disabled">
+            <span class="page-link has-icon"><i class="material-icons">Previous Page</i></span>
+        </li>
+        <li class="page-item"><a class="page-link" href="javascript:void(0)">1</a></li>
+        <li class="page-item active"><span class="page-link">2</span></li>
+        <li class="page-item"><a class="page-link" href="javascript:void(0)">3</a></li>
+        <li class="page-item">
+            <a class="page-link has-icon" href="javascript:void(0)"><i class="material-icons">Next Page</i></a>
+        </li>
+    </ul>
+</div>
+<script>
+  const updateTimeAgo = () => {
+const timeAgoElements = document.getElementsByClassName("time-ago");
+for (let i = 0; i < timeAgoElements.length; i++) {
+const originalTimeElement = timeAgoElements[i].previousElementSibling;
+const timeString = originalTimeElement.innerHTML;
+const time = new Date(timeString);
+
+const timeAgo = Math.round((new Date() - time) / 1000);
+let timeAgoString;
+
+if (timeAgo < 60) {
+  timeAgoString = `${timeAgo} seconds ago`;
+} else if (timeAgo < 3600) {
+  timeAgoString = `${Math.floor(timeAgo / 60)} minutes ago`;
+} else if (timeAgo < 86400) {
+  timeAgoString = `${Math.floor(timeAgo / 3600)} hours ago`;
+} else {
+  timeAgoString = `${Math.floor(timeAgo / 86400)} days ago`;
+}
+
+timeAgoElements[i].innerHTML = timeAgoString;
+}
+};
+
+setInterval(updateTimeAgo, 1000);
+</script>
+{% include "footer.html" %}
