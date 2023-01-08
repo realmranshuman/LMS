@@ -5,40 +5,25 @@
 		  <div class="ftco-footer-widget mb-4 bg-primary p-4">
 			<h2 class=ftco-heading-2>Surana College LMS
 			</h2>
-			<p>Far far away, behind the word mountains, far from the countries Vokalia and Consonantia, there live the blind texts.
-			<ul class="list-unstyled ftco-footer-social mb-0">
-			  <li class="fadeInUp ftco-animate ftco-animated">
-				<a href=#>
-				  <i class=icon-twitter>
-				  </i>
-				</a>
-			  <li class="fadeInUp ftco-animate ftco-animated">
-				<a href=#>
-				  <i class=icon-facebook>
-				  </i>
-				</a>
-			  <li class="fadeInUp ftco-animate ftco-animated">
-				<a href=#>
-				  <i class=icon-instagram>
-				  </i>
-				</a>
-			</ul>
+			<p>Unlock the power of lifelong learning with Surana College LMS. Flexible, accessible, and ready when you are, our platform lets you pursue your passions and achieve your goals, no matter where you are in the world.</p>
 		  </div>
 		</div>
 		<div class=col-md>
 		  <div class="ftco-footer-widget mb-4 ml-md-5">
-			<h2 class=ftco-heading-2>Unseful Links
+			<h2 class=ftco-heading-2>Useful Links
 			</h2>
 			<ul class=list-unstyled>
-			  <li>
-				<a href="/my-account/" class="d-block py-2">My Account
-				</a>
-			  <li>
-				<a href=# class="d-block py-2">Privacy Policy
-				</a>
-			  <li>
-				<a href=# class="d-block py-2">Terms And Conditions
-				</a>
+				{% if isLogin %}
+					{% if role == "teacher" %}
+				<li class="d-block py-2"><a href="/teacher-dashboard/">Teacher's Dashboard</a></li>
+					{% else %}
+				<li class="d-block py-2"><a href="/my-account/">My Account</a></li>
+				{% endif %}
+			  	{% else %}
+				<li class="d-block py-2"><a href="/login/">Log In</a></li>
+			  	{% endif %}
+				<li><a href=# class="d-block py-2">Privacy Policy</a></li>
+				<li><a href=# class="d-block py-2">Terms And Conditions</a></li>
 			</ul>
 		  </div>
 		</div>
