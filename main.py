@@ -269,6 +269,9 @@ async def uploadVideoPost (request: Request, title: str = Form(...), description
     # Set the initial file name
     new_filename = file.filename
 
+    # Set the initial thumbnail image name
+    new_thumbnail_name = base_name + "-thumbnail" + file_extension
+
     # Set the initial counter to 1
     counter = 1
 
@@ -283,6 +286,12 @@ async def uploadVideoPost (request: Request, title: str = Form(...), description
         # Update the file path
         file_path = "static/uploads/" + course + "/" + new_filename
 
+        # Generate the new thumbnail image name
+        new_thumbnail_name = base_name + " (" + str(counter) + ")" + file_extension
+
+        # Update the thumbnail image path
+        thumbnail_path = os.path.join(thumbnail_folder, new_thumbnail_name)
+
     # Create the thumbnail folder if it does not exist
     if not os.path.exists(thumbnail_folder):
         os.makedirs(thumbnail_folder)
@@ -291,13 +300,13 @@ async def uploadVideoPost (request: Request, title: str = Form(...), description
     with open(file_path, "wb") as f:
         f.write(file.file.read())
 
-
-    # Generating Thumbnail And Storing its path to the database
+    # Generate the thumbnail image using MoviePy
     video = mpy.VideoFileClip(file_path)
-    thumbnail_filename = os.path.splitext(file.filename)[0] + '.jpg'
+    thumbnail_filename = os.path.splitext(new_filename)[0] + '.jpg'
     thumbnail_path = os.path.join(thumbnail_folder, thumbnail_filename)
     thumbnail = video.save_frame(thumbnail_path, t='00:00:01')
     video.close()
+
     # Execute an INSERT statement to add the file path to the database
     # Open a connection to the database
     try:
