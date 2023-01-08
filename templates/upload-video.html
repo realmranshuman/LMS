@@ -1,6 +1,6 @@
 {% include "header.html" %}
 <div class="mx-auto w-50 py-5 px-5">
-    <form action="/upload-video" method="post" enctype="multipart/form-data">
+    <form action="/upload-video/" method="post" enctype="multipart/form-data">
       <div class="form-group">
         <label class="btn btn-block" style="background-color: transparent; border: 3px solid #421b9b;" for="file">Select A Video File</label> 
         <input type="file" class="form-control-file" id="file" name="file" accept="video/*" required hidden>        
@@ -16,19 +16,14 @@
       {% if request.session.email %}
         <input type="hidden" name="email" value="{{ request.session.email }}">
       {% endif %}
-      <!-- <div class="form-group">
-        <label for="course">Course</label>
-        <select name="course" class="form-control">
-          <option value="dcn">Data Communication And Networking</option>
-          <option value="mp">Microprocessors</option>
-          <option value="ca">Computer Architecture</option>
-          <option value="se">Software Engineering</option>
-          <option value="bnf">Banking And Financing</option>
-          <option value="java">Java Programming</option>
-        </select>
-      </div> -->
       <button type="submit" class="btn btn-primary btn-block text-center">Upload the video</button>
     </form>
+    <div class="container px-5 py-5">
+      {% if message %}
+      <div class="alert alert-danger">{{ message }}</div>
+      {% endif %}
+      <!-- Your form code here -->
+    </div>    
   </div>
     
 {% include "footer.html" %}

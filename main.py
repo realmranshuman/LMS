@@ -226,14 +226,21 @@ async def teacherDashboard(request: Request, id:str):
 async def uploadVideo(request: Request):
     isLogin = request.session.get('isLogin')
     role = request.session.get('role')
+    message = request.session.get("message")
+    if not message:
+        message = ""
     if role == "teacher":
-        return templates.TemplateResponse("upload-video.html", {"request": request, "isLogin": isLogin, "role": role})
+        response = templates.TemplateResponse("upload-video.html", {"request": request, "isLogin": isLogin, "role": role, "message": message})
     else:
-        return HTMLResponse(unauthorizedAccess)
+        response = HTMLResponse(unauthorizedAccess)
+    # Delete the message from the session after it has been retrieved
+    if "message" in request.session:
+        del request.session["message"]
+    return response
+
 
 @app.post("/upload-video/")
 async def uploadVideoPost (request: Request, title: str = Form(...), description: str = Form(...), file: UploadFile = File(...), email: str = Form(...)):
-    
     # Connect to the database
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
@@ -250,20 +257,40 @@ async def uploadVideoPost (request: Request, title: str = Form(...), description
     else:
         course = course
 
-    # (file: UploadFile, folder: str):
-    # Create the specified folder if it does not exist
-    if not os.path.exists("static/uploads/" + course):
-        os.makedirs("static/uploads/" + course)
+    # Get the base file name and file extension
+    base_name, file_extension = os.path.splitext(file.filename)
 
-    # Save the uploaded file to the specified folder
+    # Set the initial file path
     file_path = "static/uploads/" + course + "/" + file.filename
-    with open(file_path, "wb") as f:
-        f.write(file.file.read())
-    
-    # Generating Thumbnail And Storing its path to the database
-    thumbnail_folder = os.path.join(os.path.dirname(file_path), 'thumbnail')
+
+    # Set the thumbnail folder path
+    thumbnail_folder = "static/uploads/" + course + "/thumbnail"
+
+    # Set the initial file name
+    new_filename = file.filename
+
+    # Set the initial counter to 1
+    counter = 1
+
+    # Loop until we find a filename that does not exist yet
+    while os.path.exists(file_path):
+        # Increment the counter
+        counter += 1
+
+        # Generate the new filename
+        new_filename = base_name + " (" + str(counter) + ")" + file_extension
+
+        # Update the file path
+        file_path = "static/uploads/" + course + "/" + new_filename
+
+    # Create the thumbnail folder if it does not exist
     if not os.path.exists(thumbnail_folder):
         os.makedirs(thumbnail_folder)
+
+    # Save the uploaded file to the specified folder
+    with open(file_path, "wb") as f:
+        f.write(file.file.read())
+
 
     # Generating Thumbnail And Storing its path to the database
     video = mpy.VideoFileClip(file_path)
@@ -273,15 +300,20 @@ async def uploadVideoPost (request: Request, title: str = Form(...), description
     video.close()
     # Execute an INSERT statement to add the file path to the database
     # Open a connection to the database
-    conn = sqlite3.connect(db)
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO videos (title, description, course, file_path, thumbnail_path) VALUES (?, ?, ?, ?, ?)", (title, description, course, file_path, thumbnail_path))
-    
-    # Commit the transaction
-    conn.commit()
+    try:
+        conn = sqlite3.connect(db)
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO videos (title, description, course, file_path, thumbnail_path) VALUES (?, ?, ?, ?, ?)", (title, description, course, file_path, thumbnail_path))
+        # Commit the transaction
+        conn.commit()
+    except sqlite3.IntegrityError:
+        # If a unique constraint error occurs, return a redirect response with a message
+        request.session["message"] = 'A video with the same title already exists. Make sure that you are uploading the right video. If yes, please change the title.'
+        return RedirectResponse("/upload-video/", status_code=status.HTTP_302_FOUND)
+    finally:
+        # Close the connection
+        conn.close()
 
-    # Close the connection
-    conn.close()
     # return {"filename": file.filename, "file_path": file_path}
     return RedirectResponse(f"/{course}/course-videos/", status_code=status.HTTP_302_FOUND)
 
@@ -304,6 +336,8 @@ async def delete_video(request: Request, title: str, course: str):
 
         # Delete the video from the videos table
         cursor.execute("DELETE FROM videos WHERE title = ? AND course = ?", (title, course))
+        # Delete the comments on the video from comments table
+        cursor.execute("DELETE FROM comments WHERE file_path = ?", (file_path,))
 
         # Commit the transaction
         conn.commit()
@@ -540,4 +574,4 @@ def create_reply(request:Request, topic_id: int =Form(...) , reply: str =Form(..
 
     conn.commit()
 
-    return {"message": "Reply created successfully"}
+    return RedirectResponse(f"/topics/{topic_id}", status_code=status.HTTP_302_FOUND)
