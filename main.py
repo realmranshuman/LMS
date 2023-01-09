@@ -8,6 +8,7 @@ from starlette.responses import RedirectResponse, Response
 from pydantic import BaseModel
 import starlette.status as status
 from typing import Optional
+import base64
 import deta
 from deta import Deta
 import moviepy.editor as mpy
@@ -98,20 +99,18 @@ async def signUp(request: Request):
 
 @app.post("/signup/")
 async def signUpPost(request: Request, name: str = Form(...), email: str = Form(...), password: str = Form(...), role: str = Form(...), course: Optional[str] = Form(None)):
-    # # Generate a random salt
-    # salt = os.urandom(32)
-    # # Hash the password and salt as bytes
-    # hashed_password = hashlib.sha256(password.encode() + salt).hexdigest()
+    # Generate a random salt
+    salt = os.urandom(32)
+    # Convert salt to base64 string
+    encoded_salt = base64.b64encode(salt).decode()
+    # Hash the password and salt as bytes
+    hashed_password = hashlib.sha256(password.encode() + salt).hexdigest()
     if role == "teacher":
-        # Insert the user into the users table
-        # db.put({"name": name, "password": password, "role": role, "course": course},email)
-        db.put({"key": email,"user": {"name": name, "email": email,"password": password, "role": role, "course": course,}})
-        # Insert the course into the teacher_courses table
-        # cursor.execute("INSERT INTO teacher_courses (email, course) VALUES (?, ?)", (email, course))
+        db.put({"key": email,"user": {"name": name, "email": email,"password": hashed_password, "encoded_salt": encoded_salt, "role": role, "course": course,}})
     else:
-        # Insert the user into the users table
-        db.put({"key": email,"user": {"name": name, "email": email,"password": password, "role": role,}})
+        db.put({"key": email,"user": {"name": name, "email": email,"password": hashed_password, "encoded_salt": encoded_salt, "role": role,}})
     return RedirectResponse("/login", status_code=status.HTTP_302_FOUND)
+
 
 
 # Log In Page
@@ -121,27 +120,20 @@ async def login(request: Request):
     role= request.session.get('role')
     return templates.TemplateResponse("login.html", {"request": request, "isLogin": isLogin, "role": role})
 
-# @app.post("/login/", response_class=HTMLResponse)
-# def loginPost(request: Request, response: Response, email: str = Form(...), password: str = Form(...)):
-    # # Connect to the database
-    # conn = sqlite3.connect(db)
-    # cursor = conn.cursor()
-
-    # # Retrieve the salt and hashed password for the user
-    # cursor.execute('SELECT salt, password FROM users WHERE email=?', (email,))
-    # result = cursor.fetchone()
-    # if result:
-        # salt = result[0]
-        # stored_password = result[1]
-    # else:
-        # No user with the given email was found
 @app.post("/login/", response_class=HTMLResponse)
 def loginPost(request: Request, response: Response, email: str = Form(...), password: str = Form(...)):
-    # Check if user with provided email and password exists in database
+    # Check if user with provided email exists in database
     result = db.get(email)
     user = result['user']
+    
     if user:
-        if user['password'] == password:
+        encoded_salt = user['encoded_salt']
+        salt = base64.b64decode(encoded_salt)
+        # Hash the provided password
+        hashed_password = hashlib.sha256(password.encode() + salt).hexdigest()
+        print(hashed_password)
+        # Compare the hashed password to the stored hashed password
+        if user['password'] == hashed_password:
             # Set session variables
             request.session["email"] = email
             request.session.setdefault("isLogin", True)
@@ -151,32 +143,6 @@ def loginPost(request: Request, response: Response, email: str = Form(...), pass
     else:
         # Return error message
         return RedirectResponse("/login", status_code=status.HTTP_302_FOUND)
-
-
-    # Hash the password the user entered with the retrieved salt
-    # entered_password = hashlib.sha256(password.encode() + salt).hexdigest()
-
-    # Compare the stored password to the entered password
-    # if entered_password == stored_password:
-    #     # Password is correct, retrieve the user's role
-    #     cursor.execute('SELECT role FROM users WHERE email=?', (email,))
-    #     role = cursor.fetchone()[0]
-    #     # Set session variables
-    #     request.session["email"] = email
-    #     request.session.setdefault("isLogin", True)
-    #     request.session.setdefault("role", role)
-    #     # Redirect to the home page
-    #     return RedirectResponse("/", status_code=status.HTTP_302_FOUND)
-    # else:
-    #     # Password is incorrect
-    #     return templates.TemplateResponse("/login.html", {"request": request, "msg": "Invalid Username or Password"})
-
-def hash_password(password, salt):
-    # Append the salt to the password
-    salted_password = password + salt
-    # Hash the salted password
-    hashed_password = hashlib.sha256(salted_password.encode()).hexdigest()
-    return hashed_password
 
 
 # Log Out
