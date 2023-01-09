@@ -1,0 +1,1 @@
+{"id":"7d1b608c-98cf-490c-a43d-4269aef5654a","space":47190,"runtime":"python3.9","name":"LMS-micro","path":"qxy9gk","project":"d0tcw6hl","account":"144798365827","region":"ap-south-1","deps":["deta","fastapi","Jinja2","moviepy","python-multipart","uvicorn","itsdangerous","starlette"],"envs":null,"public":true,"log_level":"debug","cron":""}

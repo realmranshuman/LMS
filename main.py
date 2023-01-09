@@ -5,8 +5,11 @@ from fastapi.templating import Jinja2Templates
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import RedirectResponse, Response
+from pydantic import BaseModel
 import starlette.status as status
 from typing import Optional
+import deta
+from deta import Deta
 import moviepy.editor as mpy
 import sqlite3
 import os
@@ -26,8 +29,11 @@ templates = Jinja2Templates(directory="templates")
 # SessionMiddleware secret key
 app.add_middleware(SessionMiddleware, secret_key="eA]a^#vt9%qzRC.")
 
-# Database Path
-db ="lms.db"
+# Initialize Deta
+# Key Description: Project Key: 1c7uiq
+deta = Deta("d0tcw6hl_21EUw8bQghxyF8npDrzDRhyJd6jJpvDp")
+# Connect to or create a database.
+db = deta.Base("LMS")
 
 # Unauthorized Access
 unauthorizedAccess = """"
@@ -92,25 +98,19 @@ async def signUp(request: Request):
 
 @app.post("/signup/")
 async def signUpPost(request: Request, name: str = Form(...), email: str = Form(...), password: str = Form(...), role: str = Form(...), course: Optional[str] = Form(None)):
-    # Generate a random salt
-    salt = os.urandom(32)
-    # Hash the password and salt as bytes
-    hashed_password = hashlib.sha256(password.encode() + salt).hexdigest()
-    # Connect to the database
-    conn = sqlite3.connect(db)
-    cursor = conn.cursor()
+    # # Generate a random salt
+    # salt = os.urandom(32)
+    # # Hash the password and salt as bytes
+    # hashed_password = hashlib.sha256(password.encode() + salt).hexdigest()
     if role == "teacher":
         # Insert the user into the users table
-        cursor.execute("INSERT INTO users (name, email, password, salt, role) VALUES (?, ?, ?, ?, ?)", (name, email, hashed_password, salt, role))
+        # db.put({"name": name, "password": password, "role": role, "course": course},email)
+        db.put({"key": email,"user": {"name": name, "email": email,"password": password, "role": role, "course": course,}})
         # Insert the course into the teacher_courses table
-        cursor.execute("INSERT INTO teacher_courses (email, course) VALUES (?, ?)", (email, course))
+        # cursor.execute("INSERT INTO teacher_courses (email, course) VALUES (?, ?)", (email, course))
     else:
         # Insert the user into the users table
-        cursor.execute("INSERT INTO users (name, email, password, salt, role) VALUES (?, ?, ?, ?, ?)", (name, email, hashed_password, salt, role))
-    # Commit the transaction
-    conn.commit()
-    # Close the connection
-    conn.close()
+        db.put({"key": email,"user": {"name": name, "email": email,"password": password, "role": role,}})
     return RedirectResponse("/login", status_code=status.HTTP_302_FOUND)
 
 
@@ -121,39 +121,55 @@ async def login(request: Request):
     role= request.session.get('role')
     return templates.TemplateResponse("login.html", {"request": request, "isLogin": isLogin, "role": role})
 
+# @app.post("/login/", response_class=HTMLResponse)
+# def loginPost(request: Request, response: Response, email: str = Form(...), password: str = Form(...)):
+    # # Connect to the database
+    # conn = sqlite3.connect(db)
+    # cursor = conn.cursor()
+
+    # # Retrieve the salt and hashed password for the user
+    # cursor.execute('SELECT salt, password FROM users WHERE email=?', (email,))
+    # result = cursor.fetchone()
+    # if result:
+        # salt = result[0]
+        # stored_password = result[1]
+    # else:
+        # No user with the given email was found
 @app.post("/login/", response_class=HTMLResponse)
 def loginPost(request: Request, response: Response, email: str = Form(...), password: str = Form(...)):
-    # Connect to the database
-    conn = sqlite3.connect(db)
-    cursor = conn.cursor()
-
-    # Retrieve the salt and hashed password for the user
-    cursor.execute('SELECT salt, password FROM users WHERE email=?', (email,))
-    result = cursor.fetchone()
-    if result:
-        salt = result[0]
-        stored_password = result[1]
+    # Check if user with provided email and password exists in database
+    result = db.get(email)
+    user = result['user']
+    if user:
+        if user['password'] == password:
+            # Set session variables
+            request.session["email"] = email
+            request.session.setdefault("isLogin", True)
+            request.session.setdefault("role", user['role'])
+            # Return success response
+            return RedirectResponse("/", status_code=status.HTTP_302_FOUND)
     else:
-        # No user with the given email was found
-        return templates.TemplateResponse("/login.html", {"request": request, "msg": "Invalid Username or Password"})
+        # Return error message
+        return RedirectResponse("/login", status_code=status.HTTP_302_FOUND)
+
 
     # Hash the password the user entered with the retrieved salt
-    entered_password = hashlib.sha256(password.encode() + salt).hexdigest()
+    # entered_password = hashlib.sha256(password.encode() + salt).hexdigest()
 
     # Compare the stored password to the entered password
-    if entered_password == stored_password:
-        # Password is correct, retrieve the user's role
-        cursor.execute('SELECT role FROM users WHERE email=?', (email,))
-        role = cursor.fetchone()[0]
-        # Set session variables
-        request.session["email"] = email
-        request.session.setdefault("isLogin", True)
-        request.session.setdefault("role", role)
-        # Redirect to the home page
-        return RedirectResponse("/", status_code=status.HTTP_302_FOUND)
-    else:
-        # Password is incorrect
-        return templates.TemplateResponse("/login.html", {"request": request, "msg": "Invalid Username or Password"})
+    # if entered_password == stored_password:
+    #     # Password is correct, retrieve the user's role
+    #     cursor.execute('SELECT role FROM users WHERE email=?', (email,))
+    #     role = cursor.fetchone()[0]
+    #     # Set session variables
+    #     request.session["email"] = email
+    #     request.session.setdefault("isLogin", True)
+    #     request.session.setdefault("role", role)
+    #     # Redirect to the home page
+    #     return RedirectResponse("/", status_code=status.HTTP_302_FOUND)
+    # else:
+    #     # Password is incorrect
+    #     return templates.TemplateResponse("/login.html", {"request": request, "msg": "Invalid Username or Password"})
 
 def hash_password(password, salt):
     # Append the salt to the password
@@ -209,6 +225,22 @@ async def teacherDashboard(request: Request, id:str):
     conn.close()
     template_path = ""
     if id == "contact-queries":
+        msg = db._fetch()
+        # Access the items list
+        items = msg[1]['items']
+
+        # Create a list to store the name, email, phone, and query for each item
+        data = []
+
+        # Iterate over the list of items
+        for item in items:
+            # Store the name, email, phone, and query for each item in the data list
+            data.append({
+                "name": item['name'],
+                "email": item['email'],
+                "phone": item['phone'],
+                "query": item['query']
+            })
         template_path = "/teacher-dashboard/contact-queries.html"
     elif id == "students-list":
         template_path = "/teacher-dashboard/students-list.html"
@@ -445,23 +477,13 @@ async def about(request: Request):
 async def contactUs(request: Request):
     isLogin = request.session.get('isLogin')
     role= request.session.get('role')
+    isLogin = request.session.get('isLogin')
+    role= request.session.get('role')
     return templates.TemplateResponse("contact.html", {"request": request, "isLogin": isLogin, "role": role})
 
 @app.post("/contact/")
 async def contactUsPost(request: Request, name: str = Form(...), email: str = Form(...), phone: str = Form(...), query: str = Form(...)):
-    conn = sqlite3.connect(db)
-    cursor = conn.cursor()
-    
-    # Insert the data into the contact_queries table
-    cursor.execute("INSERT INTO contact_queries (name, email, phone, query) VALUES (?, ?, ?, ?)", (name, email, phone, query))
-    
-    # Commit the transaction
-    conn.commit()
-    
-    # Close the connection
-    conn.close()
-    
-    # Redirect back to the /contact/ page with a success message
+    db.put({"name": name, "email": email, "phone": phone, "query": query})
     return RedirectResponse("/contact/", status_code=status.HTTP_302_FOUND, headers={"msg": "Form submitted successfully"})
 
 # Discussion Forum
