@@ -1,0 +1,15 @@
+{
+    "version": 1,
+    "builds": [
+        {
+            "src": "*.py",
+            "use": "@realmranshuman/fastapi-lms"
+        }
+    ],
+    "routes": [
+        {
+            "src": "(.*)",
+            "dest": "main.py"
+        }
+    ]
+  }
