@@ -13,9 +13,6 @@
         <label for="description">Description</label>
         <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
       </div>
-      {% if request.session.email %}
-        <input type="hidden" name="email" value="{{ request.session.email }}">
-      {% endif %}
       <button type="submit" class="btn btn-primary btn-block text-center">Upload the video</button>
     </form>
     <div class="container px-5 py-5">

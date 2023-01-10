@@ -35,6 +35,7 @@ app.add_middleware(SessionMiddleware, secret_key="eA]a^#vt9%qzRC.")
 deta = Deta("d0tcw6hl_21EUw8bQghxyF8npDrzDRhyJd6jJpvDp")
 # Connect to or create a database.
 db = deta.Base("LMS")
+drive = deta.Drive("LMS")
 
 # Unauthorized Access
 unauthorizedAccess = """"
@@ -106,9 +107,9 @@ async def signUpPost(request: Request, name: str = Form(...), email: str = Form(
     # Hash the password and salt as bytes
     hashed_password = hashlib.sha256(password.encode() + salt).hexdigest()
     if role == "teacher":
-        db.put({"key": email,"user": {"name": name, "email": email,"password": hashed_password, "encoded_salt": encoded_salt, "role": role, "course": course,}})
+        db.insert({"key": email,"user_details": {"name": name, "email": email,"password": hashed_password, "encoded_salt": encoded_salt, "role": role, "course": course,}})
     else:
-        db.put({"key": email,"user": {"name": name, "email": email,"password": hashed_password, "encoded_salt": encoded_salt, "role": role,}})
+        db.insert({"key": email,"user_details": {"name": name, "email": email,"password": hashed_password, "encoded_salt": encoded_salt, "role": role,}})
     return RedirectResponse("/login", status_code=status.HTTP_302_FOUND)
 
 
@@ -124,14 +125,13 @@ async def login(request: Request):
 def loginPost(request: Request, response: Response, email: str = Form(...), password: str = Form(...)):
     # Check if user with provided email exists in database
     result = db.get(email)
-    user = result['user']
+    user = result['user_details']
     
     if user:
         encoded_salt = user['encoded_salt']
         salt = base64.b64decode(encoded_salt)
         # Hash the provided password
         hashed_password = hashlib.sha256(password.encode() + salt).hexdigest()
-        print(hashed_password)
         # Compare the hashed password to the stored hashed password
         if user['password'] == hashed_password:
             # Set session variables
@@ -176,12 +176,6 @@ async def teacherDashboard(request: Request, id:str):
     # Connecting to the database
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
-    # Accessing Contact Queries
-    cursor.execute('SELECT * FROM contact_queries')
-    queries = cursor.fetchall()
-    # Accessing Student List
-    cursor.execute('SELECT * FROM users WHERE role="student"')
-    students = cursor.fetchall()
     # Selecting the videos uploaded by the teacher who is accessing the dashboard
     cursor.execute('SELECT * FROM videos WHERE course IN (SELECT course FROM teacher_courses WHERE email = ?)', (email,))
     videos = cursor.fetchall()
@@ -191,31 +185,19 @@ async def teacherDashboard(request: Request, id:str):
     conn.close()
     template_path = ""
     if id == "contact-queries":
-        msg = db._fetch()
-        # Access the items list
-        items = msg[1]['items']
-
-        # Create a list to store the name, email, phone, and query for each item
-        data = []
-
-        # Iterate over the list of items
-        for item in items:
-            # Store the name, email, phone, and query for each item in the data list
-            data.append({
-                "name": item['name'],
-                "email": item['email'],
-                "phone": item['phone'],
-                "query": item['query']
-            })
+        query = {"contact_query.email?contains":"@"}
+        contact_queries = next(db.fetch(query))
         template_path = "/teacher-dashboard/contact-queries.html"
     elif id == "students-list":
+        query = {"user_details.role":"student"}
+        students = next(db.fetch(query))
         template_path = "/teacher-dashboard/students-list.html"
     elif id == "videos-list":
         template_path = "/teacher-dashboard/videos-list.html"
     
     # Access To The Teacher's Dashboard
     if role == "teacher":
-        return templates.TemplateResponse("/teacher-dashboard/teacher-dashboard.html", {"request": request, "isLogin": isLogin, "role": role, "queries": queries, "videos": videos, "students": students, "template_path": template_path })
+        return templates.TemplateResponse("/teacher-dashboard/teacher-dashboard.html", {"request": request, "isLogin": isLogin, "role": role, "queries": contact_queries, "videos": videos, "students": students, "template_path": template_path })
     else:
         return HTMLResponse(unauthorizedAccess)
 
@@ -238,28 +220,20 @@ async def uploadVideo(request: Request):
 
 
 @app.post("/upload-video/")
-async def uploadVideoPost (request: Request, title: str = Form(...), description: str = Form(...), file: UploadFile = File(...), email: str = Form(...)):
-    # Connect to the database
-    conn = sqlite3.connect(db)
-    cursor = conn.cursor()
-    # Fetch the user's role and course from the database
-    cursor.execute("SELECT role, course FROM users LEFT JOIN teacher_courses ON users.email = teacher_courses.email WHERE users.email = ?", (email,))
-    user = cursor.fetchone()
-    # Close the connection
-    conn.close()
+async def uploadVideoPost (request: Request, title: str = Form(...), description: str = Form(...), file: UploadFile = File(...)):
+    email = request.session.get('email')
+    result = db.get(email)
+    user = result['user_details']
+    user_course = user['course']
 
     # Use the user's course if the user is a teacher,
-    # otherwise use the course provided in the form
-    if user[0] == "teacher":
-        course = user[1]
-    else:
-        course = course
+    course = user_course
 
     # Get the base file name and file extension
     base_name, file_extension = os.path.splitext(file.filename)
 
     # Set the initial file path
-    file_path = "static/uploads/" + course + "/" + file.filename
+    file_path = f"static/uploads/{course}/{new_filename}"
 
     # Set the thumbnail folder path
     thumbnail_folder = "static/uploads/" + course + "/thumbnail"
@@ -290,13 +264,27 @@ async def uploadVideoPost (request: Request, title: str = Form(...), description
         # Update the thumbnail image path
         thumbnail_path = os.path.join(thumbnail_folder, new_thumbnail_name)
 
+    # Save the uploaded file to a buffer
+    buffer = file.file.read()
+
+    # Set the file path for Deta's Drive
+    file_path = f"static/uploads/{course}/{new_filename}"
+
+    # Save the file to Deta's Drive
+    drive.put(file_path, buffer, content_type=file.content_type)
+
+    # Generate the thumbnail image using MoviePy, but save it to a buffer instead of a local file
+    thumbnail_buffer = video.save_frame(thumbnail_path, t='00:00:01')
+
+    # Set the thumbnail file path for Deta's Drive
+    thumbnail_path = os.path.join(thumbnail_folder, thumbnail_filename)
+
+    # Save the thumbnail image to Deta's Drive
+    drive.put(thumbnail_path, thumbnail_buffer, content_type='image/jpeg')
+
     # Create the thumbnail folder if it does not exist
     if not os.path.exists(thumbnail_folder):
         os.makedirs(thumbnail_folder)
-
-    # Save the uploaded file to the specified folder
-    with open(file_path, "wb") as f:
-        f.write(file.file.read())
 
     # Generate the thumbnail image using MoviePy
     video = mpy.VideoFileClip(file_path)
@@ -308,18 +296,11 @@ async def uploadVideoPost (request: Request, title: str = Form(...), description
     # Execute an INSERT statement to add the file path to the database
     # Open a connection to the database
     try:
-        conn = sqlite3.connect(db)
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO videos (title, description, course, file_path, thumbnail_path) VALUES (?, ?, ?, ?, ?)", (title, description, course, file_path, thumbnail_path))
-        # Commit the transaction
-        conn.commit()
-    except sqlite3.IntegrityError:
+        db.insert({"key": title,"video": {"title": title, "description": description,"course": course, "file_path": file_path, "thumbnail_path": thumbnail_path,}})
+    except Exception as e:
         # If a unique constraint error occurs, return a redirect response with a message
         request.session["message"] = 'A video with the same title already exists. Make sure that you are uploading the right video. If yes, please change the title.'
         return RedirectResponse("/upload-video/", status_code=status.HTTP_302_FOUND)
-    finally:
-        # Close the connection
-        conn.close()
 
     # return {"filename": file.filename, "file_path": file_path}
     return RedirectResponse(f"/{course}/course-videos/", status_code=status.HTTP_302_FOUND)
@@ -443,13 +424,11 @@ async def about(request: Request):
 async def contactUs(request: Request):
     isLogin = request.session.get('isLogin')
     role= request.session.get('role')
-    isLogin = request.session.get('isLogin')
-    role= request.session.get('role')
     return templates.TemplateResponse("contact.html", {"request": request, "isLogin": isLogin, "role": role})
 
 @app.post("/contact/")
 async def contactUsPost(request: Request, name: str = Form(...), email: str = Form(...), phone: str = Form(...), query: str = Form(...)):
-    db.put({"name": name, "email": email, "phone": phone, "query": query})
+    db.insert({"contact_query": {"name": name, "email": email, "phone": phone, "query": query}})
     return RedirectResponse("/contact/", status_code=status.HTTP_302_FOUND, headers={"msg": "Form submitted successfully"})
 
 # Discussion Forum
