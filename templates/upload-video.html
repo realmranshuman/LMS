@@ -5,7 +5,15 @@
       <form action="/upload-video/" method="post" enctype="multipart/form-data">
         <div class="form-group">
           <label class="btn btn-block" style="background-color: transparent; border: 3px solid #421b9b;" for="file">Select A Video File</label> 
-          <input type="file" class="form-control-file" id="file" name="file" accept="video/*" required hidden>       
+          <input type="file" class="form-control-file" id="file" name="file" accept="video/*" required hidden> 
+          <span id="file-chosen">No file chosen</span>  
+          <script>
+            const actualBtn = document.getElementById('file');
+            const fileChosen = document.getElementById('file-chosen');
+            actualBtn.addEventListener('change', function(){
+              fileChosen.textContent = this.files[0].name
+            })
+          </script>    
         </div>
         <div class="form-group">
           <label for="title">Title</label>
