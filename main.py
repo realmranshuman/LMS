@@ -18,7 +18,7 @@ import hashlib
 # Creating FastAPI Objects
 app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=1000)
-app.add_middleware(HTTPSRedirectMiddleware)
+# app.add_middleware(HTTPSRedirectMiddleware)
 security = HTTPBasic()
 
 # Path to static files
