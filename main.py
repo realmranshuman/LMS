@@ -1,4 +1,6 @@
 from fastapi import Cookie, FastAPI, Request, File, UploadFile, Form, HTTPException
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -15,6 +17,8 @@ import hashlib
 
 # Creating FastAPI Objects
 app = FastAPI()
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+app.add_middleware(HTTPSRedirectMiddleware)
 security = HTTPBasic()
 
 # Path to static files
