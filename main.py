@@ -159,12 +159,12 @@ def loginPost(request: Request, response: Response, email: str = Form(...), pass
         # Password is incorrect
         return templates.TemplateResponse("/login.html", {"request": request, "msg": "Invalid Username or Password"})
 
-def hash_password(password, salt):
-    # Append the salt to the password
-    salted_password = password + salt
-    # Hash the salted password
-    hashed_password = hashlib.sha256(salted_password.encode()).hexdigest()
-    return hashed_password
+# def hash_password(password, salt):
+#     # Append the salt to the password
+#     salted_password = password + salt
+#     # Hash the salted password
+#     hashed_password = hashlib.sha256(salted_password.encode()).hexdigest()
+#     return hashed_password
 
 
 # Log Out
@@ -497,14 +497,7 @@ def createTopicPost(request: Request, title: str = Form(...), description: str =
     )
 
     conn.commit()
-
-    # return {
-    #     "id": cursor.lastrowid,
-    #     "title": title,
-    #     "description": description,
-    #     "created_by": created_by,
-    #     "created_by_name": created_by_name,
-    # }
+    return RedirectResponse("/topics/", status_code=status.HTTP_302_FOUND)
 
 # List all the existing topics
 @app.get("/topics/")
@@ -513,12 +506,14 @@ def list_topics(request: Request):
     cursor = conn.cursor()
 
     cursor.execute(
-        """
-        SELECT topics.*, users.name AS created_by_name
-        FROM topics
-        JOIN users ON topics.created_by = users.email
-        """
+    """
+    SELECT topics.*, users.name AS created_by_name
+    FROM topics
+    JOIN users ON topics.created_by = users.email
+    ORDER BY topics.created_at DESC
+    """
     )
+
     topics = cursor.fetchall()
 
     isLogin = request.session.get('isLogin')

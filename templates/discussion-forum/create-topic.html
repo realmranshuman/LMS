@@ -9,10 +9,31 @@
     </div>
     <div class="form-group">
       <label for="description" class="font-weight-bold">Description</label>
-      <textarea class="form-control" id="description" name="description" required></textarea>
+      <input name="description" type="hidden">
+      <div id="editor-container"></div>
       <div class="invalid-feedback">Please enter a description for the topic.</div>
     </div>
     <button type="submit" class="btn btn-primary btn-lg btn-block">Post The Topic</button>
   </form>
 </div>
+<script>
+var quill = new Quill('#editor-container', {
+  modules: {
+    toolbar: [
+      ['bold', 'italic'],
+      ['link', 'blockquote', 'code-block', 'image'],
+      [{ list: 'ordered' }, { list: 'bullet' }]
+    ]
+  },
+  placeholder: 'Compose an epic...',
+  theme: 'snow'
+});
+
+var form = document.querySelector('form');
+form.onsubmit = function() {
+  // Populate hidden form on submit
+  var description = document.querySelector('input[name=description]');
+  description.value = quill.root.innerHTML;
+};
+</script>
 {% include "footer.html" %} 
