@@ -36,6 +36,20 @@
       </div>
       <button type="submit" class="btn btn-primary btn-block" style="background-color: #6927ff;">Sign Up</button>
     </form>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+      const roleSelect = document.getElementById("role");
+      const courseSelect = document.getElementById("course");
+    
+      roleSelect.addEventListener("change", () => {
+        if (roleSelect.value === "teacher") {
+          courseSelect.style.display = "block";
+        } else {
+          courseSelect.style.display = "none";
+        }
+      });
+    });
+    </script>
     <p class="py-5">Alredy signed up? <a href="/login"> Click here to log in</a></p>
       </div>
     </div>

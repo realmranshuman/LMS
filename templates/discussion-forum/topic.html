@@ -4,7 +4,7 @@
   <div class="jumbotron mb-4">
   <h1 class="mb-3">{{ topic[1] }}</h1>
   <small class="text-muted mb-3 d-block">Posted by <a href="#">{{ topic[5] }}</a> on {{ topic[3] }}</small>
-    <p>{{ topic[2] }}</p> 
+    <p>{{ topic[2]|safe }}</p> 
     <form action="/replies/create" method="post">
       <div class="form-group">
         <textarea class="form-control mt-5" rows="3" id="reply" name="reply"></textarea>
